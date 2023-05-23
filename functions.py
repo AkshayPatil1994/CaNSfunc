@@ -126,3 +126,45 @@ def maskdata(maskarr,dataarr):
     dataarr[maskarr<0] = numpy.nan
     # Return the original array
     return dataarr 
+#
+# Planform average data
+#
+def planAvg(datarr,outvec):
+    '''
+        This function computes the planform average for a given array
+    INPUT
+        datarr:     [numpy array] Data array to be averaged
+    OUTPUT
+        outvec:     [Nz x 1 array]  Planform averaged array    
+    '''
+    import numpy as np
+    # Average over homogeneous directions
+    outvec = np.mean(datarr,axis=(0,1))
+    # Return the data
+    return outvec
+#
+# Set default plotting size
+#
+def fixPlot(thickness=1.0, fontsize=12, markersize=6, labelsize=10):
+    '''
+        This plot sets the default plot parameters
+    INPUT
+        thickness:      [float] Default thickness of the axes lines
+        fontsize:       [integer] Default fontsize of the axes labels
+        markersize:     [integer] Default markersize
+        labelsize:      [integer] Default label size
+    OUTPUT
+        None
+    '''
+    # Import the required libraries
+    import matplotlib.pyplot as plt
+    # Set the thickness of plot axes
+    plt.rcParams['axes.linewidth'] = thickness    
+    # Set the default fontsize
+    plt.rcParams['font.size'] = fontsize    
+    # Set the default markersize
+    plt.rcParams['lines.markersize'] = markersize    
+    # Set the axes label size
+    plt.rcParams['axes.labelsize'] = labelsize
+    # Enable LaTeX rendering
+    plt.rcParams['text.usetex'] = True

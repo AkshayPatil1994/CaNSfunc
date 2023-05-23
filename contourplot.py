@@ -4,15 +4,16 @@
 import numpy as np
 import cmocean
 import matplotlib.pyplot as plt
-from functions import read_single_field_binary, read_grid, maskdata
+from functions import read_single_field_binary, read_grid, maskdata, fixPlot
 #
 # User input data
 #
 maskU = True
-gridloc = '/home/alpatil/Simulations/ibmCaNS/corals/channelrun/foote/run/data/'
-dataloc = '/home/alpatil/Simulations/ibmCaNS/corals/channelrun/foote/run/data/vex_fld_0002000.bin'
-maskuloc = '/home/alpatil/Simulations/ibmCaNS/corals/channelrun/foote/run/data/umask.bin'
-N = [1024,512,256]
+xloc, yloc, zloc = 128, 64, 40      # Locations where to slice the contour
+gridloc = '/home/alpatil/Simulations/ibmCaNS/corals/run/data/'
+dataloc = '/home/alpatil/Simulations/ibmCaNS/corals/run/data/vex_fld_0002400.bin'
+maskuloc = '/home/alpatil/Simulations/ibmCaNS/corals/run/data/sdfu.bin'
+N = [512,512,256]
 #
 # Load the grid
 #
@@ -27,4 +28,16 @@ if(maskU):
     umask = read_single_field_binary(maskuloc,N)
     # Mask the data
     U = maskdata(umask,U)
-
+#
+# Plot the contour map
+#
+fixPlot(thickness=2.5, fontsize=25, markersize=8, labelsize=20)
+plt.figure(1,figsize=(10,10))
+cmap = cmocean.cm.curl                       # Choose a colormap
+plt.contourf(xf,yp,np.squeeze(U[:,:,zloc]).T,cmap=cmap)
+# Axis labels
+plt.xlabel(r'$x_1$',fontsize=25)
+# Quality fixes 
+plt.gca().set_facecolor('yellow')
+plt.axis('equal')
+plt.show()
