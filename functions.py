@@ -23,12 +23,6 @@ def read_single_field_binary(filenamei,ng,iskip=[1,1,1],r0=[0.,0.,0.]):
         data:       [ng sized -- numpy array] Numpy array as output          
     '''
     #
-    # Force import libraries
-    #
-    import numpy as np
-    import os
-    import sys
-    #
     # Check if the file directory exists
     #
     filestat = os.path.exists(filenamei)
@@ -68,9 +62,6 @@ def read_grid(loc='data/',iprecision=8,ng=[10,10,10],r0=[0.,0.,0.],non_uniform_g
         xp, yp, zp:         [Numpy arrays] Cell-Center grid
         xu, yv, zw:         [Numpy arrays] Cell-Face grid
     '''
-    import numpy as np
-    import os
-    import sys
     #
     # Check if the file directory exists
     #
@@ -122,7 +113,6 @@ def maskdata(maskarr,dataarr):
     OUTPUT
         datarr:     [Numpy array] The data is masked in place        
     '''
-    import numpy
     # Set the data to NaN inside the masking array
     dataarr[maskarr<0] = numpy.nan
     # Return the original array
@@ -138,7 +128,6 @@ def planAvg(datarr,outvec):
     OUTPUT
         outvec:     [Nz x 1 array]  Planform averaged array    
     '''
-    import numpy as np
     # Average over homogeneous directions
     outvec = np.nanmean(datarr,axis=(0,1))
     # Return the data
@@ -196,6 +185,43 @@ def readinput(filename,verbose=False):
 
     return N, L, ivisc, svind, waveinfo, avginfo
 #
+# Sanity check for the MPI code
+#
+def sanityCheck(size,N,numfields=1,verbose=False):
+    '''
+        This function tests the MPI run
+    INPUT
+        size:       [integer] Number of CPUs used to run the case
+        N:          [3 x 1 list] Number of grid points in x, y, and z
+        numfield:   [integer] Number of arrays loaded in parallel
+        verbose:    [Boolean] Print info to screen
+    OUTPUT
+        None
+    '''
+    # Force load psutil [seems to crash without a force load]
+    import psutil
+    # Check total system memory available
+    tmem = psutil.virtual_memory().total
+    tmem = tmem/(1024**3)   # Convert bytes to GB
+    # Estimate the size of data
+    floatsize = 8   # Size of DP float
+    fsGB = (N[0]*N[1]*N[2]*floatsize)/(1024**3) # Estimated size of the array in GB
+    # Compare the file size against the installed virtual memory
+    memchk = fsGB*numfields*size < tmem
+    # Print warning
+    if(memchk == False):
+        print("Warning: RAM may be insufficient, please consider using nprocs < %d"%(size))
+        print("")
+        print("     -       -       -       -       -       -       -       -")
+    else:
+        print("             Memory check successful, running the analysis")
+        print("     -       -       -       -       -       -       -       -")
+    # Print to screen
+    if(verbose):
+        print("         Required memory ",round(fsGB*numfields*size,2),"GB available memory ",round(tmem,2),"GB")
+        print("     -       -       -       -       -       -       -       -")
+
+#
 # Set default plotting size
 #
 def fixPlot(thickness=1.0, fontsize=12, markersize=6, labelsize=10, texuse=False):
@@ -209,8 +235,6 @@ def fixPlot(thickness=1.0, fontsize=12, markersize=6, labelsize=10, texuse=False
     OUTPUT
         None
     '''
-    # Import the required libraries
-    import matplotlib.pyplot as plt
     # Set the thickness of plot axes
     plt.rcParams['axes.linewidth'] = thickness    
     # Set the default fontsize
@@ -221,3 +245,15 @@ def fixPlot(thickness=1.0, fontsize=12, markersize=6, labelsize=10, texuse=False
     plt.rcParams['axes.labelsize'] = labelsize
     # Enable LaTeX rendering
     plt.rcParams['text.usetex'] = texuse
+#
+# Print utils logo
+#     
+def printLogo():
+    print("-----------------------------------------------------------------------------")
+    print(" ██████╗ █████╗ ███╗   ██╗███████╗      ██╗   ██╗████████╗██╗██╗     ███████╗")
+    print("██╔════╝██╔══██╗████╗  ██║██╔════╝      ██║   ██║╚══██╔══╝██║██║     ██╔════╝")
+    print("██║     ███████║██╔██╗ ██║███████╗█████╗██║   ██║   ██║   ██║██║     ███████╗")
+    print("██║     ██╔══██║██║╚██╗██║╚════██║╚════╝██║   ██║   ██║   ██║██║     ╚════██║")
+    print("╚██████╗██║  ██║██║ ╚████║███████║      ╚██████╔╝   ██║   ██║███████╗███████║")
+    print(" ╚═════╝╚═╝  ╚═╝╚═╝  ╚═══╝╚══════╝       ╚═════╝    ╚═╝   ╚═╝╚══════╝╚══════╝")
+    print("-----------------------------------------------------------------------------")
