@@ -1,19 +1,30 @@
 #
 # Plot basic visualisation and contours
 #
+import psutil as ps
 import numpy as np
 import cmocean
 import matplotlib.pyplot as plt
 from functions import read_single_field_binary, read_grid, maskdata, fixPlot
 #
+# Log initial memory load
+#
+pinit = ps.Process()
+imem = pinit.memory_info().rss  # Log the initial memory
+#
 # User input data
 #
-maskU = True
-xloc, yloc, zloc = 128, 64, 40      # Locations where to slice the contour
-gridloc = '/home/alpatil/Simulations/ibmCaNS/corals/run/data/'
-dataloc = '/home/alpatil/Simulations/ibmCaNS/corals/run/data/vex_fld_0002400.bin'
-maskuloc = '/home/alpatil/Simulations/ibmCaNS/corals/run/data/sdfu.bin'
-N = [512,512,256]
+findex = '0002400'                      # Index of the file to be loaded included padded 0s
+N = [512,512,256]                       # Grid size
+maskU = True                            # Do you wish to mask the velocity?
+xloc, yloc, zloc = 128, 64, 40          # Locations where to slice the contour
+dloc = '/mnt/storage1/waveCoral/ct1'    # Base location of the data
+#
+# Setting up the right data directories
+#
+gridloc = dloc+'/data/'
+dataloc = dloc+'/data/vex_fld_'+findex+'.bin'
+maskuloc = dloc+'/data/sdfu.bin'
 #
 # Load the grid
 #
@@ -27,7 +38,12 @@ if(maskU):
     # Load the masking array
     umask = read_single_field_binary(maskuloc,N)
     # Mask the data
-    U = maskdata(umask,U)
+    maskdata(umask,U)
+# Log the end process memory
+emem = pinit.memory_info().rss  # Log the end memory
+memuse = emem - imem            # Total memory used
+memuse = ps._common.bytes2human(memuse) # Convert to human readable format
+print("Estimated memory used: ",memuse)
 #
 # Plot the contour map
 #

@@ -40,6 +40,7 @@ def read_single_field_binary(filenamei,ng,iskip=[1,1,1],r0=[0.,0.,0.]):
     iprecision = 8              # precision of the real-valued data
     r0 = np.array(r0)           # domain origin
     iskip = np.array(iskip)     # Convert iskip to array
+    ng = np.array(ng)           # Convert grid points list to array
     precision  = 'float64'      # Set the float precision
     if(iprecision == 4): precision = 'float32'
     #
@@ -139,13 +140,65 @@ def planAvg(datarr,outvec):
     '''
     import numpy as np
     # Average over homogeneous directions
-    outvec = np.mean(datarr,axis=(0,1))
+    outvec = np.nanmean(datarr,axis=(0,1))
     # Return the data
     return outvec
 #
+# Read time averaging input file
+#
+def readinput(filename,verbose=False):
+    '''
+        This function reads the input file for the time averaging
+    INPUT
+        filename:   [string] Name and location of the input file
+        verbose:    [Boolean] Print the information to screen
+    OUTPUT
+        parameters: [dictionary] Data with the parameters names and the data
+    '''
+    # Dictionary to store the results
+    parameters = {}     # Store the name of the parameters
+    data = {}           # Store the data
+    # Open the file in read mode
+    with open(filename, 'r') as file:
+        current_parameter = None  # Variable to track the current parameter        
+        # Read each line in the file
+        for line in file:
+            line = line.strip()  # Remove leading/trailing whitespace            
+            # Skip comment lines starting with '!'
+            if line.startswith('!'):
+                current_parameter = line[1:].strip()  # Extract the parameter name
+                continue            
+            # Split the line by commas
+            values = line.split(',')            
+            # Check if it's a parameter or data line
+            if current_parameter is not None:
+                # Store parameter values
+                parameter_values = [float(val) for val in values]
+                parameters[current_parameter] = parameter_values
+            else:
+                # Store data values
+                data[current_parameter] = [float(val) for val in values]
+    # Assign the variables from param
+    N = [int(value) for value in parameters['grid']]
+    L = [float(value) for value in parameters['domain']]
+    ivisc = [float(value) for value in parameters['ivisc']]
+    svind = [int(value) for value in parameters['saveinfo']]
+    waveinfo = [float(value) for value in parameters['wavecondition']]
+    avginfo = [int(value) for value in parameters['avginfo']]
+    # Print info to screen
+    if(verbose):
+        print("----------------------------------------------")
+        print("Datatypes are enforced on return....")
+        print("Parameters summary from file %s ..."%(filename))
+        for parameter, values in parameters.items():
+            print(f"{parameter}: {values}")
+        print("----------------------------------------------")
+
+    return N, L, ivisc, svind, waveinfo, avginfo
+#
 # Set default plotting size
 #
-def fixPlot(thickness=1.0, fontsize=12, markersize=6, labelsize=10):
+def fixPlot(thickness=1.0, fontsize=12, markersize=6, labelsize=10, texuse=False):
     '''
         This plot sets the default plot parameters
     INPUT
@@ -167,4 +220,4 @@ def fixPlot(thickness=1.0, fontsize=12, markersize=6, labelsize=10):
     # Set the axes label size
     plt.rcParams['axes.labelsize'] = labelsize
     # Enable LaTeX rendering
-    plt.rcParams['text.usetex'] = True
+    plt.rcParams['text.usetex'] = texuse
