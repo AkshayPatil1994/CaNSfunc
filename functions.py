@@ -23,12 +23,6 @@ def read_single_field_binary(filenamei,ng,iskip=[1,1,1],r0=[0.,0.,0.]):
         data:       [ng sized -- numpy array] Numpy array as output          
     '''
     #
-    # Force import libraries
-    #
-    import numpy as np
-    import os
-    import sys
-    #
     # Check if the file directory exists
     #
     filestat = os.path.exists(filenamei)
@@ -40,6 +34,7 @@ def read_single_field_binary(filenamei,ng,iskip=[1,1,1],r0=[0.,0.,0.]):
     iprecision = 8              # precision of the real-valued data
     r0 = np.array(r0)           # domain origin
     iskip = np.array(iskip)     # Convert iskip to array
+    ng = np.array(ng)           # Convert grid points list to array
     precision  = 'float64'      # Set the float precision
     if(iprecision == 4): precision = 'float32'
     #
@@ -67,9 +62,6 @@ def read_grid(loc='data/',iprecision=8,ng=[10,10,10],r0=[0.,0.,0.],non_uniform_g
         xp, yp, zp:         [Numpy arrays] Cell-Center grid
         xu, yv, zw:         [Numpy arrays] Cell-Face grid
     '''
-    import numpy as np
-    import os
-    import sys
     #
     # Check if the file directory exists
     #
@@ -121,8 +113,147 @@ def maskdata(maskarr,dataarr):
     OUTPUT
         datarr:     [Numpy array] The data is masked in place        
     '''
-    import numpy
     # Set the data to NaN inside the masking array
-    dataarr[maskarr<0] = numpy.nan
+    dataarr[maskarr<0] = np.nan
     # Return the original array
     return dataarr 
+#
+# Planform average data
+#
+def planAvg(datarr,outvec):
+    '''
+        This function computes the planform average for a given array
+    INPUT
+        datarr:     [numpy array] Data array to be averaged
+    OUTPUT
+        outvec:     [Nz x 1 array]  Planform averaged array    
+    '''
+    # Average over homogeneous directions
+    outvec = np.nanmean(datarr,axis=(0,1))
+    # Return the data
+    return outvec
+#
+# Read time averaging input file
+#
+def readinput(filename,verbose=False):
+    '''
+        This function reads the input file for the time averaging
+    INPUT
+        filename:   [string] Name and location of the input file
+        verbose:    [Boolean] Print the information to screen
+    OUTPUT
+        parameters: [dictionary] Data with the parameters names and the data
+    '''
+    # Dictionary to store the results
+    parameters = {}     # Store the name of the parameters
+    data = {}           # Store the data
+    # Open the file in read mode
+    with open(filename, 'r') as file:
+        current_parameter = None  # Variable to track the current parameter        
+        # Read each line in the file
+        for line in file:
+            line = line.strip()  # Remove leading/trailing whitespace            
+            # Skip comment lines starting with '!'
+            if line.startswith('!'):
+                current_parameter = line[1:].strip()  # Extract the parameter name
+                continue            
+            # Split the line by commas
+            values = line.split(',')            
+            # Check if it's a parameter or data line
+            if current_parameter is not None:
+                # Store parameter values
+                parameter_values = [float(val) for val in values]
+                parameters[current_parameter] = parameter_values
+            else:
+                # Store data values
+                data[current_parameter] = [float(val) for val in values]
+    # Assign the variables from param
+    N = [int(value) for value in parameters['grid']]
+    L = [float(value) for value in parameters['domain']]
+    ivisc = [float(value) for value in parameters['ivisc']]
+    svind = [int(value) for value in parameters['saveinfo']]
+    waveinfo = [float(value) for value in parameters['wavecondition']]
+    avginfo = [int(value) for value in parameters['avginfo']]
+    # Print info to screen
+    if(verbose):
+        print("----------------------------------------------")
+        print("Datatypes are enforced on return....")
+        print("Parameters summary from file %s ..."%(filename))
+        for parameter, values in parameters.items():
+            print(f"{parameter}: {values}")
+        print("----------------------------------------------")
+
+    return N, L, ivisc, svind, waveinfo, avginfo
+#
+# Sanity check for the MPI code
+#
+def sanityCheck(size,N,numfields=1,verbose=False):
+    '''
+        This function tests the MPI run
+    INPUT
+        size:       [integer] Number of CPUs used to run the case
+        N:          [3 x 1 list] Number of grid points in x, y, and z
+        numfield:   [integer] Number of arrays loaded in parallel
+        verbose:    [Boolean] Print info to screen
+    OUTPUT
+        None
+    '''
+    # Force load psutil [seems to crash without a force load]
+    import psutil
+    # Check total system memory available
+    tmem = psutil.virtual_memory().total
+    tmem = tmem/(1024**3)   # Convert bytes to GB
+    # Estimate the size of data
+    floatsize = 8   # Size of DP float
+    fsGB = (N[0]*N[1]*N[2]*floatsize)/(1024**3) # Estimated size of the array in GB
+    # Compare the file size against the installed virtual memory
+    memchk = fsGB*numfields*size < tmem
+    # Print warning
+    if(memchk == False):
+        print("Warning: RAM may be insufficient, please consider using nprocs < %d"%(size))
+        print("")
+        print("     -       -       -       -       -       -       -       -")
+    else:
+        print("             Memory check successful, running the analysis")
+        print("     -       -       -       -       -       -       -       -")
+    # Print to screen
+    if(verbose):
+        print("         Required memory ",round(fsGB*numfields*size,2),"GB available memory ",round(tmem,2),"GB")
+        print("     -       -       -       -       -       -       -       -")
+
+#
+# Set default plotting size
+#
+def fixPlot(thickness=1.0, fontsize=12, markersize=6, labelsize=10, texuse=False):
+    '''
+        This plot sets the default plot parameters
+    INPUT
+        thickness:      [float] Default thickness of the axes lines
+        fontsize:       [integer] Default fontsize of the axes labels
+        markersize:     [integer] Default markersize
+        labelsize:      [integer] Default label size
+    OUTPUT
+        None
+    '''
+    # Set the thickness of plot axes
+    plt.rcParams['axes.linewidth'] = thickness    
+    # Set the default fontsize
+    plt.rcParams['font.size'] = fontsize    
+    # Set the default markersize
+    plt.rcParams['lines.markersize'] = markersize    
+    # Set the axes label size
+    plt.rcParams['axes.labelsize'] = labelsize
+    # Enable LaTeX rendering
+    plt.rcParams['text.usetex'] = texuse
+#
+# Print utils logo
+#     
+def printLogo():
+    print("-----------------------------------------------------------------------------")
+    print(" ██████╗ █████╗ ███╗   ██╗███████╗      ██╗   ██╗████████╗██╗██╗     ███████╗")
+    print("██╔════╝██╔══██╗████╗  ██║██╔════╝      ██║   ██║╚══██╔══╝██║██║     ██╔════╝")
+    print("██║     ███████║██╔██╗ ██║███████╗█████╗██║   ██║   ██║   ██║██║     ███████╗")
+    print("██║     ██╔══██║██║╚██╗██║╚════██║╚════╝██║   ██║   ██║   ██║██║     ╚════██║")
+    print("╚██████╗██║  ██║██║ ╚████║███████║      ╚██████╔╝   ██║   ██║███████╗███████║")
+    print(" ╚═════╝╚═╝  ╚═╝╚═╝  ╚═══╝╚══════╝       ╚═════╝    ╚═╝   ╚═╝╚══════╝╚══════╝")
+    print("-----------------------------------------------------------------------------")
