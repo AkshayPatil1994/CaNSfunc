@@ -11,6 +11,17 @@
 # SPDX-License-Identifier: MIT
 #
 # -
+#
+# Import all required libraries
+#
+import numpy as np                      # Array operations module
+import time                             # Time measurement modules
+import os                               # OS library for dir operations
+import sys                              # System library for exit 
+import psutil                           # Import process utilities
+#
+# Read single binary results file
+#
 def read_single_field_binary(filenamei,ng,iskip=[1,1,1],r0=[0.,0.,0.]):
     '''
         This file reads a single binary field generated within CaNS
@@ -114,7 +125,7 @@ def maskdata(maskarr,dataarr):
         datarr:     [Numpy array] The data is masked in place        
     '''
     # Set the data to NaN inside the masking array
-    dataarr[maskarr<0] = numpy.nan
+    dataarr[maskarr<0] = np.nan
     # Return the original array
     return dataarr 
 #
@@ -135,12 +146,13 @@ def planAvg(datarr,outvec):
 #
 # Read time averaging input file
 #
-def readinput(filename,verbose=False):
+def readinput(filename,verbose=False,rank=0):
     '''
         This function reads the input file for the time averaging
     INPUT
-        filename:   [string] Name and location of the input file
-        verbose:    [Boolean] Print the information to screen
+        filename:       [string] Name and location of the input file
+        verbose:        [Boolean] Print the information to screen
+        rank:           [integer] Default rank that prints
     OUTPUT
         parameters: [dictionary] Data with the parameters names and the data
     '''
@@ -175,7 +187,7 @@ def readinput(filename,verbose=False):
     waveinfo = [float(value) for value in parameters['wavecondition']]
     avginfo = [int(value) for value in parameters['avginfo']]
     # Print info to screen
-    if(verbose):
+    if(verbose and rank == 0):
         print("----------------------------------------------")
         print("Datatypes are enforced on return....")
         print("Parameters summary from file %s ..."%(filename))
@@ -187,10 +199,11 @@ def readinput(filename,verbose=False):
 #
 # Sanity check for the MPI code
 #
-def sanityCheck(size,N,numfields=1,verbose=False):
+def sanityCheck(ds,size,N,numfields=1,verbose=False):
     '''
         This function tests the MPI run
     INPUT
+        ds:         [integer] Number of total files to be read
         size:       [integer] Number of CPUs used to run the case
         N:          [3 x 1 list] Number of grid points in x, y, and z
         numfield:   [integer] Number of arrays loaded in parallel
@@ -199,7 +212,13 @@ def sanityCheck(size,N,numfields=1,verbose=False):
         None
     '''
     # Force load psutil [seems to crash without a force load]
-    import psutil
+    # import psutil
+    # Check if datasize is compatible
+    if(ds % size != 0):
+        print("You are trying to load %d files with %d processors"%(ds,size))
+        print("Please ensure mod(%d,%d) == 0...."%(ds,size))
+        sys.exit("Please ensure that you load atleast %d files in total"%(size))
+
     # Check total system memory available
     tmem = psutil.virtual_memory().total
     tmem = tmem/(1024**3)   # Convert bytes to GB

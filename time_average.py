@@ -47,6 +47,9 @@ Uplan = np.zeros([N[2],datasize])      # Initialise the empty numpy arrays
 #
 umask = read_single_field_binary(maskuloc,ng=N[0:3])
 #
+# Loop over all the file array and load the results
+#
+#
 # Set up the averaging loop
 #
 print("----------------------------------------------------------------")
