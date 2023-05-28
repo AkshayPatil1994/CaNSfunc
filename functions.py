@@ -19,6 +19,7 @@ import time                             # Time measurement modules
 import os                               # OS library for dir operations
 import sys                              # System library for exit 
 import psutil                           # Import process utilities
+import matplotlib.pyplot as plt         # Plotting library
 #
 # Read single binary results file
 #
@@ -243,7 +244,7 @@ def sanityCheck(ds,size,N,numfields=1,verbose=False):
 #
 # Set default plotting size
 #
-def fixPlot(thickness=1.0, fontsize=12, markersize=6, labelsize=10, texuse=False):
+def fixPlot(thickness=1.5, fontsize=20, markersize=8, labelsize=15, texuse=False, tickSize = 15):
     '''
         This plot sets the default plot parameters
     INPUT
@@ -264,6 +265,11 @@ def fixPlot(thickness=1.0, fontsize=12, markersize=6, labelsize=10, texuse=False
     plt.rcParams['axes.labelsize'] = labelsize
     # Enable LaTeX rendering
     plt.rcParams['text.usetex'] = texuse
+    # Tick size
+    plt.rcParams['xtick.major.size'] = tickSize
+    plt.rcParams['ytick.major.size'] = tickSize
+    plt.rcParams['xtick.direction'] = 'in'
+    plt.rcParams['ytick.direction'] = 'in'
 #
 # Print utils logo
 #     

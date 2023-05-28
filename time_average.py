@@ -3,26 +3,28 @@
 #
 import numpy as np
 import time
-from functions import read_grid, read_single_field_binary, planAvg, maskdata, readinput
+from rich.console import Console
+from functions import read_grid, read_single_field_binary, planAvg, maskdata, readinput, printLogo
 #
 # Setup input data
 #
 saveArray = True                        # Save the planform array to file
 printinfo = False                       # Print info to screen
-dloc = '/mnt/storage1/waveCoral/ct1'    # Base location of the data
+dloc = '/home/alpatil/Simulations/ibmCaNS/corals/ct2'    # Base location of the data
 gridloc = dloc+'/data/'                 # Set the location of the grid
 dataloc = dloc+'/data/vex_fld_'         # Choose the array to be loaded
 maskuloc = dloc+'/data/sdfu.bin'        # Choose the masking array
-# - - - - Name of the outputfile to store Uplan - - - - #
-outfile = '/mnt/storage1/waveCoral/ct1/analysis/results/Uplan'
+# - - - - Name of the outputfile to store numpy arrays - - - - #
+outfile = '/home/alpatil/Simulations/ibmCaNS/corals/ct2/'
 #-------------------------------------------------------------------------------#
 # Do not change code below this line unless you are sure of what you are doing! #
-# #-------------------------------------------------------------------------------#            
+#-------------------------------------------------------------------------------#            
 #
 # Print initial header
 #
-if(printinfo):
-    print("----------------------------------------------------------------")
+console = Console()
+printLogo()
+console.print(25*' ',"Starting analysis loop")
 #
 # Read input file    
 #
@@ -38,6 +40,8 @@ avgSind = avginfo[0]    # Start index to begin averaging
 avgEind = avginfo[1]    # End index to begin averaging
 datasize = int((avgEind-avgSind)/interval)  # Define the size of the result array
 Uplan = np.zeros([N[2],datasize])      # Initialise the empty numpy arrays
+urms = np.zeros([N[2],datasize])       # Initialise the empty numpy arrays
+ufluc = np.zeros(N[0:3])               # Array for fluctuating velocity
 #
 # Read the grid once
 #
@@ -49,36 +53,32 @@ umask = read_single_field_binary(maskuloc,ng=N[0:3])
 #
 # Loop over all the file array and load the results
 #
-#
-# Set up the averaging loop
-#
-print("----------------------------------------------------------------")
-print("Starting the analysis time loop.....")
-totTime, iter = 0, 0
-for find in range(avgSind,avgEind,interval):
-    dfile = dataloc+str(find).zfill(7)+'.bin'
-    # Load the velocity data
-    st = time.time()
-    U = read_single_field_binary(dfile,N[0:3])
-    # Mask the data
-    maskdata(umask,U)
-    # Compute the planform average
-    planAvg(U,Uplan[:,iter])
-    # Lof the end time
-    et = time.time()
-    # Save total time
-    totTime += (et-st)          
-    print("Iteration %d/%d completed in %f seconds. . . ."%(iter+1,datasize,et-st))
-    #Increment iter
-    iter += 1
+with console.status("Computing statistics. . .") as status:
+    totTime, iter = 0, 0
+    for find in range(avgSind,avgEind,interval):
+        dfile = dataloc+str(find).zfill(7)+'.bin'
+        st = time.time()
+        U = read_single_field_binary(dfile,N[0:3])
+        maskdata(umask,U)           # Mask data
+        Uplan[:,iter] = planAvg(U,Uplan[:,iter])    # Compute planform average
+        ufluc = U - Uplan[:,iter]   # Turbulent velocity
+        urms[:,iter] = planAvg(ufluc**2,urms[:,iter])
+        urms[:,iter] = np.sqrt(urms[:,iter]) 
+        et = time.time()
+        totTime += (et-st)          
+        console.print("Iteration %d/%d completed in %f seconds. . . ."%(iter+1,datasize,et-st))
+        iter += 1
 #
 # Save array to file
 #
 if(saveArray):
-    np.save(outfile,Uplan)
+    fname = outfile+'Uplan'
+    np.save(fname,Uplan)
+    fname = outfile+'urms'
+    np.save(fname,urms)
 #
 # Exit gracefully
 #     
-print("----------------------------------------------------------------")
-print("Done in %f seconds......"%(totTime))
-print("----------------------------------------------------------------")
+console.print("-----------------------------------------------------------------------------")
+console.print("Done in %f seconds......"%(totTime))
+console.print("-----------------------------------------------------------------------------")
