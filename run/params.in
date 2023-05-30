@@ -1,0 +1,6 @@
+512, 512, 256, 160              ! Nx, Ny, Nz, Nks
+0.234, 0.234, 0.208, 0.094      ! Lx, Ly, Lz, ks
+1.0e6                           ! ivisc
+40000, 80                       ! nsteps, nsave
+0.016603, 8.0, 0.4              ! Ub, Tw, Tsave
+20000, 30000                    ! sind, eind
