@@ -32,7 +32,7 @@ contains
     subroutine queryRAM(myid,size,narrays,itot,jtot,ktot)
         integer, intent(in) :: myid, size, narrays, itot, jtot, ktot 
         real :: requiredRAM 
-        ! This functions queries the system installed RAM
+        ! This functions prompts the estimates RAM required for the code to run in parallel
         !
         ! INPUT
         !       myid:       [integer] Processor id

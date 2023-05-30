@@ -20,7 +20,7 @@ program compstats
     ! All data within types is used, be careful when allocating large arrays [memory intensive]
     use mod_types           
     use mod_allocatedata,   only: initdata
-    use mod_load,           only: load_one
+    use mod_load,           only: load_one, write1dprof
     use mod_operators,      only: maskdata, planAvg
     !
     implicit none                         
@@ -29,7 +29,6 @@ program compstats
     call MPI_INIT(ierr)
     call MPI_COMM_SIZE(MPI_COMM_WORLD,size,ierr)
     call MPI_COMM_RANK(MPI_COMM_WORLD,myid,ierr)
-    call cpu_time(starttime)
 
     ! Print logo
     call echologo(myid,size)
@@ -56,12 +55,15 @@ program compstats
     print*, "Rank ",myid, "works on files from ",avglist(1),"to",avglist(avglistlen)
     call MPI_BARRIER(MPI_COMM_WORLD,ierr)
 
+    ! Query start time for the computation
+    call cpu_time(starttime)
+
     ! Load masking data [on all processors]
     infile = '../data/sdfu.bin'
     call load_one(myid,infile,umask)
     
     ! Compute the averaging denominator
-    deno = itot*jtot*ktot
+    deno = itot*jtot
     do kk=1,ktot
         do jj=1,jtot
             do ii=1,itot 
@@ -75,13 +77,12 @@ program compstats
     if(myid == 0) then
         infile = '../data/denominator.dat'
         open(unit=myid,file=infile,action='write',form='formatted',status='replace',access='stream')
-        do kk=1,ktot
-            write(myid,*) deno(kk)
-        end do
+        write(myid,*) deno
         close(unit=myid)
     end if
-    ! Communication and I/O barrier
+    ! Communication and I/O barrier [sync all processors until here]
     call MPI_BARRIER(MPI_COMM_WORLD,ierr)
+
     ! Loop over all the files to load and analyse
     do gi=1,avglistlen
         ! Define the filename
@@ -92,12 +93,14 @@ program compstats
         call maskdata(umask,u)
         ! Planform average the velocity
         call planAvg(u,uplan)
+        ! All processors write the data to file
+        write(infile,'(A,I7.7,A)') 'uplan_',avglist(gi),'.dat'
+        call write1dprof(myid,infile,uplan)
     end do
     call cpu_time(endtime)
-    print*, "Total elapsed time: ", endtime-starttime
-
-    
-
+    print*, "Total elapsed time: ", endtime-starttime, "on rank: ", myid    
+    ! Communication and I/O barrier [sync all processors until here]
+    call MPI_BARRIER(MPI_COMM_WORLD,ierr)
     ! Exit MPI
     call MPI_FINALIZE(ierr)
 end program compstats
