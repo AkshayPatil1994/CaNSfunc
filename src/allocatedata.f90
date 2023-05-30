@@ -2,7 +2,7 @@
 ! This module allocates all the arrays
 !
 module mod_allocatedata
-    !
+    ! 
     use mpi
     use mod_types
     use mod_param,  only: itot, jtot, ktot
@@ -11,10 +11,6 @@ module mod_allocatedata
 contains 
 
     subroutine initdata(myid)
-        ! 
-        use mpi
-        use mod_types,  only: avglist, avglistlen, u
-        use mod_param,  only: itot, jtot, ktot
         !
         implicit none
         integer, intent(in) :: myid
@@ -25,9 +21,12 @@ contains
         ! OUTPUT
         !       Allocates all the arrays
         allocate ( avglist(avglistlen) )
+        ! Masking array
+        allocate ( deno(ktot) )
+        allocate ( umask(itot,jtot,ktot) )
         ! velocity data array
         allocate ( u(itot,jtot,ktot) )
-
+        allocate ( uplan(ktot) )
 
     end subroutine initdata
 

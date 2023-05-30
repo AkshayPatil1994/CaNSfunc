@@ -27,7 +27,10 @@ module mod_types
     integer :: avglistlen 
     integer, allocatable, dimension(:) :: avglist 
     ! Data arrays
+    integer, allocatable, dimension(:) :: deno 
+    real(rp), allocatable, dimension(:,:,:) :: umask
     real(rp), allocatable, dimension(:,:,:) :: u
+    real(rp), allocatable, dimension(:) :: uplan
 
 end module mod_types
   

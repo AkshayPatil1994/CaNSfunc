@@ -12,9 +12,6 @@ contains
     
     subroutine load_one(myid,filename,data)
         !
-        use mpi
-        use mod_types,     only: rp
-        !
         implicit none
         integer, intent(in) :: myid
         character(200), intent(in) :: filename
