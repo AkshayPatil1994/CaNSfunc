@@ -11,6 +11,17 @@
 # SPDX-License-Identifier: MIT
 #
 # -
+#
+# Import all required libraries
+#
+import numpy as np                      # Array operations module
+import os                               # OS library for dir operations
+import sys                              # System library for exit 
+import psutil                           # Import process utilities
+import matplotlib.pyplot as plt         # Plotting library
+#
+# Read single binary results file
+#
 def read_single_field_binary(filenamei,ng,iskip=[1,1,1],r0=[0.,0.,0.]):
     '''
         This file reads a single binary field generated within CaNS
@@ -135,12 +146,13 @@ def planAvg(datarr,outvec):
 #
 # Read time averaging input file
 #
-def readinput(filename,verbose=False):
+def readinput(filename,verbose=False,rank=0):
     '''
         This function reads the input file for the time averaging
     INPUT
-        filename:   [string] Name and location of the input file
-        verbose:    [Boolean] Print the information to screen
+        filename:       [string] Name and location of the input file
+        verbose:        [Boolean] Print the information to screen
+        rank:           [integer] Default rank that prints
     OUTPUT
         parameters: [dictionary] Data with the parameters names and the data
     '''
@@ -175,7 +187,7 @@ def readinput(filename,verbose=False):
     waveinfo = [float(value) for value in parameters['wavecondition']]
     avginfo = [int(value) for value in parameters['avginfo']]
     # Print info to screen
-    if(verbose):
+    if(verbose and rank == 0):
         print("----------------------------------------------")
         print("Datatypes are enforced on return....")
         print("Parameters summary from file %s ..."%(filename))
@@ -187,10 +199,11 @@ def readinput(filename,verbose=False):
 #
 # Sanity check for the MPI code
 #
-def sanityCheck(size,N,numfields=1,verbose=False):
+def sanityCheck(ds,size,N,numfields=1,verbose=False):
     '''
         This function tests the MPI run
     INPUT
+        ds:         [integer] Number of total files to be read
         size:       [integer] Number of CPUs used to run the case
         N:          [3 x 1 list] Number of grid points in x, y, and z
         numfield:   [integer] Number of arrays loaded in parallel
@@ -199,7 +212,13 @@ def sanityCheck(size,N,numfields=1,verbose=False):
         None
     '''
     # Force load psutil [seems to crash without a force load]
-    import psutil
+    # import psutil
+    # Check if datasize is compatible
+    if(ds % size != 0):
+        print("You are trying to load %d files with %d processors"%(ds,size))
+        print("Please ensure mod(%d,%d) == 0...."%(ds,size))
+        sys.exit("Please ensure that you load atleast %d files in total"%(size))
+
     # Check total system memory available
     tmem = psutil.virtual_memory().total
     tmem = tmem/(1024**3)   # Convert bytes to GB
@@ -220,11 +239,27 @@ def sanityCheck(size,N,numfields=1,verbose=False):
     if(verbose):
         print("         Required memory ",round(fsGB*numfields*size,2),"GB available memory ",round(tmem,2),"GB")
         print("     -       -       -       -       -       -       -       -")
-
+#
+# Generate results storing arrays
+#
+def gendir():
+    '''
+        This function generates the required directories to store the data
+    INPUT
+        None
+    OUTPUT
+        Generates the directories if not already present
+    '''
+    direxists = os.path.isdir("stats")
+    if(direxists):
+        print("`stats/` directory already exists . . .")
+    else:
+        os.mkdir("stats/")
+        print("`stats/` directory successfully created . . .")
 #
 # Set default plotting size
 #
-def fixPlot(thickness=1.0, fontsize=12, markersize=6, labelsize=10, texuse=False):
+def fixPlot(thickness=1.5, fontsize=20, markersize=8, labelsize=15, texuse=False, tickSize = 15):
     '''
         This plot sets the default plot parameters
     INPUT
@@ -245,6 +280,11 @@ def fixPlot(thickness=1.0, fontsize=12, markersize=6, labelsize=10, texuse=False
     plt.rcParams['axes.labelsize'] = labelsize
     # Enable LaTeX rendering
     plt.rcParams['text.usetex'] = texuse
+    # Tick size
+    plt.rcParams['xtick.major.size'] = tickSize
+    plt.rcParams['ytick.major.size'] = tickSize
+    plt.rcParams['xtick.direction'] = 'in'
+    plt.rcParams['ytick.direction'] = 'in'
 #
 # Print utils logo
 #     
