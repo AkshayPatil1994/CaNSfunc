@@ -3,8 +3,8 @@
 ###########################
 #
 # Read single binary file [Copied from CaNS utilities]
-# Author: P. Costa
-#
+# Author: P. Costa [original routines]
+#       : A. Patil
 # -
 #
 # SPDX-FileCopyrightText: Copyright (c) 2017-2022 Pedro Costa and the CaNS contributors. All rights reserved.
@@ -237,8 +237,34 @@ def sanityCheck(ds,size,N,numfields=1,verbose=False):
         print("     -       -       -       -       -       -       -       -")
     # Print to screen
     if(verbose):
-        print("         Required memory ",round(fsGB*numfields*size,2),"GB available memory ",round(tmem,2),"GB")
+        print("         Required memory ",round(fsGB*numfields*size,2)," | GB available memory ",round(tmem,2),"GB")
         print("     -       -       -       -       -       -       -       -")
+#
+# Interpolate U from faces to cell center
+#
+def interpU(Uin,dir):
+    '''
+        This function interpolates the velocity from faces to cell-centers
+    INPUT
+        Uin:    [3D numpy array] Velocity vector to be interpolated
+        dir:    [integer] Direction in which interpolation is needed
+                1 - interpolate in x
+                2 - interpolate in y
+                3 - interpolate in z
+    OUTPUT
+        Uin:    [3D numpy array] Returns the output array
+    '''
+    usize = np.size(Uin)
+    match dir:
+        case 1:
+            Uin[0:usize[0]-1,:,:] = 0.5*(Uin[0:usize[0]-1,:,:] + Uin[1:usize[0],:,:]) 
+        case 2:
+            Uin[:,0:usize[1]-1,:] = 0.5*(Uin[:,0:usize[1]-1,:] + Uin[:,1:usize[1],:])     
+        case 3:
+            Uin[:,:,0:usize[2]-1] = 0.5*(Uin[:,:,0:usize[2]-1] + Uin[:,:,1:usize[2]])
+        case _:
+            raise ValueError("Invalid interpolation direction specified dir = %d"%(dir))
+    return Uin        
 #
 # Generate results storing arrays
 #

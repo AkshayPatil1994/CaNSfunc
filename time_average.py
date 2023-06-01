@@ -5,7 +5,7 @@ import numpy as np
 import time
 from rich.console import Console
 from functions import read_grid, read_single_field_binary, planAvg, maskdata, readinput, printLogo, \
-                      sanityCheck, gendir
+                      sanityCheck, gendir, interpU
 #
 # Setup input data
 #
@@ -19,8 +19,6 @@ wloc = dloc+'/data/vey_fld_'            # Choose the array to be loaded
 maskuloc = dloc+'/data/sdfu.bin'        # Choose the u masking array
 maskvloc = dloc+'/data/sdfv.bin'        # Choose the v masking array
 maskwloc = dloc+'/data/sdfw.bin'        # Choose the w masking array
-# - - - - Name of the outputfile to store Uplan - - - - #
-#uplanoutfile = '/mnt/storage1/waveCoral/ct1/analysis/results/Uplan'
 #-------------------------------------------------------------------------------#
 # Do not change code below this line unless you are sure of what you are doing! #
 #-------------------------------------------------------------------------------#            
@@ -89,7 +87,12 @@ for find in range(avgSind,avgEind,interval):
     urms[:,iter] = planAvg(U**2,urms[:,iter])
     vrms[:,iter] = planAvg(V**2,vrms[:,iter])
     wrms[:,iter] = planAvg(W**2,wrms[:,iter])
-    # Lof the end time
+    # Compute the Reynolds stress [post face to cell-center interpolation]
+    U = interpU(U,2)    # First in y
+    U = interpU(U,3)    # Second in z
+    W = interpU(W,2)    # First in y
+    W = interpU(W,1)    # Second in x
+    # Log the end time
     et = time.time()
     # Save total time
     totTime += (et-st)          
