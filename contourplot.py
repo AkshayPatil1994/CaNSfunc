@@ -38,7 +38,7 @@ if(maskU):
     # Load the masking array
     umask = read_single_field_binary(maskuloc,N)
     # Mask the data
-    maskdata(umask,U)
+    U = maskdata(umask,U)
 # Log the end process memory
 emem = pinit.memory_info().rss  # Log the end memory
 memuse = emem - imem            # Total memory used
