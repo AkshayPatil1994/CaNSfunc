@@ -257,11 +257,11 @@ def interpU(Uin,dir):
     usize = np.size(Uin)
     match dir:
         case 1:
-            Uin[0:usize[0]-1,:,:] = 0.5*(Uin[0:usize[0]-1,:,:] + Uin[1:usize[0],:,:]) 
+            Uin[1:usize[0],:,:] = 0.5*(Uin[0:usize[0]-1,:,:] + Uin[1:usize[0],:,:]) 
         case 2:
-            Uin[:,0:usize[1]-1,:] = 0.5*(Uin[:,0:usize[1]-1,:] + Uin[:,1:usize[1],:])     
+            Uin[:,1:usize[1],:] = 0.5*(Uin[:,0:usize[1]-1,:] + Uin[:,1:usize[1],:])     
         case 3:
-            Uin[:,:,0:usize[2]-1] = 0.5*(Uin[:,:,0:usize[2]-1] + Uin[:,:,1:usize[2]])
+            Uin[:,:,1:usize[2]] = 0.5*(Uin[:,:,0:usize[2]-1] + Uin[:,:,1:usize[2]])
         case _:
             raise ValueError("Invalid interpolation direction specified dir = %d"%(dir))
     return Uin        
